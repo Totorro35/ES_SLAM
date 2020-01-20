@@ -19,7 +19,7 @@
 
 #include <memory>
 
-typedef vpRGBa ImgType;
+typedef unsigned char ImgType;
 
 int main(int argc, char **argv)
 {
@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     try
     {
 
-        std::shared_ptr<Slam::Slam<ImgType>> slam(new Slam::Homography<ImgType>());
+        
 
         std::string videoname = "";
         for (int i = 0; i < argc; i++)
@@ -50,6 +50,8 @@ int main(int argc, char **argv)
         std::cout << "video name: " << videoname << std::endl;
         std::cout << "video framerate: " << g.getFramerate() << "Hz" << std::endl;
         std::cout << "video dimension: " << I.getWidth() << " " << I.getHeight() << std::endl;
+
+        std::shared_ptr<Slam::Slam<ImgType>> slam(new Slam::Homography<ImgType>(I));
 
 #ifdef VISP_HAVE_X11
         vpDisplayX d(I);

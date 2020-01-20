@@ -4,7 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/src"
+                "${workspaceFolder}/src",
+                "/usr/include/x86_64-linux-gnu",
+                "/usr/include/libxml2"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

@@ -40,7 +40,7 @@ public:
      * 
      * @param i 
      */
-    virtual void update(const vpImage<T> &i) = 0;
+    virtual void update(const vpImage<T> &I) = 0;
 
     virtual ~Slam() {}
 
