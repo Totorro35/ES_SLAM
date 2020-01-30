@@ -27,9 +27,6 @@ int main(int argc, char **argv)
 #if defined(VISP_HAVE_OPENCV) && (VISP_HAVE_OPENCV_VERSION >= 0x020100) || defined(VISP_HAVE_FFMPEG)
     try
     {
-
-        
-
         std::string videoname = "";
         for (int i = 0; i < argc; i++)
         {
@@ -43,6 +40,8 @@ int main(int argc, char **argv)
             }
         }
 
+        
+
         vpImage<ImgType> I;
         vpVideoReader g;
         g.setFileName(videoname);
@@ -51,7 +50,9 @@ int main(int argc, char **argv)
         std::cout << "video framerate: " << g.getFramerate() << "Hz" << std::endl;
         std::cout << "video dimension: " << I.getWidth() << " " << I.getHeight() << std::endl;
 
-        std::shared_ptr<Slam::Slam<ImgType>> slam(new Slam::Homography<ImgType>(I));
+        vpCameraParameters cam(200, 200, I.getWidth() / 2, I.getHeight() / 2);
+
+        std::shared_ptr<Slam::Slam<ImgType>> slam(new Slam::Homography<ImgType>(I,cam));
 
 #ifdef VISP_HAVE_X11
         vpDisplayX d(I);
@@ -63,20 +64,24 @@ int main(int argc, char **argv)
         std::cout << "No image viewer is available..." << std::endl;
 #endif
 
+        vpTranslationVector objPos(0.0,0.0,0.5);
+        vpHomogeneousMatrix wTo(objPos,vpRotationMatrix());
+
         vpDisplay::setTitle(I, "Video reader");
         while (!g.end())
         {
             double t = vpTime::measureTimeMs();
             g.acquire(I);
-            slam->update(I);
+            vpHomogeneousMatrix cTw = slam->update(I);
             vpDisplay::display(I);
+            vpDisplay::displayFrame(I,cTw*wTo,cam,5,vpColor(0,0,255));
             vpDisplay::flush(I);
             if (vpDisplay::getClick(I, false))
                 break;
             vpTime::wait(t, 1000. / g.getFramerate());
         }
 
-        slam->saveJson("out.txt");
+        slam->saveJson("../data/out.txt");
     }
     catch (vpException e)
     {

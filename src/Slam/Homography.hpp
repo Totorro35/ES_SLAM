@@ -26,10 +26,11 @@ private:
 
     vpKeyPoint::vpFilterMatchingType filterType;
     vpKeyPoint keypoint;
-    vpCameraParameters cam;
-    vpHomography curHref;
 
-    vpHomogeneousMatrix pose_from_homography(const vpHomography& homography)
+    vpImage<T> previousFrame;
+    vpCameraParameters m_cam;
+
+    static vpHomogeneousMatrix pose_from_homography(const vpHomography& homography)
     {
         vpMatrix oHw = homography.convert();
 
@@ -51,15 +52,17 @@ private:
     }
 
 public:
-    Homography(const vpImage<T> &I) : cam(840, 840, I.getWidth() / 2, I.getHeight() / 2),
-                                      filterType(vpKeyPoint::ratioDistanceThreshold),
-                                      keypoint(detectorName, extractorName, matcherName, filterType)
+    Homography(const vpImage<T> &I,const vpCameraParameters& cam) : m_cam(cam),
+                                        filterType(vpKeyPoint::ratioDistanceThreshold),
+                                        keypoint(detectorName, extractorName, matcherName, filterType)
     {
-        keypoint.buildReference(I);
+        previousFrame = I;
+        this->addPoses(vpHomogeneousMatrix());
     }
 
-    void update(const vpImage<T> &I)
+    vpHomogeneousMatrix update(const vpImage<T> &I)
     {
+        keypoint.buildReference(previousFrame);
         unsigned int nbMatch = keypoint.matchPoint(I);
         std::cout << "Nb matches: " << nbMatch << std::endl;
 
@@ -72,23 +75,31 @@ public:
         for (unsigned int i = 0; i < nbMatch; i++)
         {
             keypoint.getMatchedPoints(i, iPref[i], iPcur[i]);
-            vpPixelMeterConversion::convertPoint(cam, iPref[i], mPref_x[i], mPref_y[i]);
-            vpPixelMeterConversion::convertPoint(cam, iPcur[i], mPcur_x[i], mPcur_y[i]);
+            vpPixelMeterConversion::convertPoint(m_cam, iPref[i], mPref_x[i], mPref_y[i]);
+            vpPixelMeterConversion::convertPoint(m_cam, iPcur[i], mPcur_x[i], mPcur_y[i]);
         }
+
+        vpHomography curHref;
 
         try
         {
             double residual;
             vpHomography::ransac(mPref_x, mPref_y, mPcur_x, mPcur_y, curHref, inliers, residual,
-                                 (unsigned int)(mPref_x.size() * 0.25), 2.0 / cam.get_px(), true);
+                                 (unsigned int)(mPref_x.size() * 0.25), 2.0 / m_cam.get_px(), true);
         }
         catch (...)
         {
             std::cout << "Cannot compute homography from matches..." << std::endl;
         }
 
-        vpHomogeneousMatrix transformMatrix = pose_from_homography(curHref);
-        this->addPoses(transformMatrix);
+        vpHomogeneousMatrix curTref = pose_from_homography(curHref);
+        vpHomogeneousMatrix refTw = this->last();
+        vpHomogeneousMatrix curTw = curTref*refTw;
+        this->addPoses(curTw);
+
+        previousFrame = I;
+
+        return curTw;
     }
 };
 

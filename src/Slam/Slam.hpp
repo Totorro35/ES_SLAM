@@ -24,6 +24,7 @@ private:
     std::vector<vpHomogeneousMatrix> m_poses;
 
 protected:
+
     void addPoses(const vpPoseVector &pose)
     {
         m_poses.push_back(vpHomogeneousMatrix(pose));
@@ -34,13 +35,17 @@ protected:
         m_poses.push_back(pose);
     }
 
+    const vpHomogeneousMatrix& last() const{
+        return m_poses[m_poses.size()-1];
+    }
+
 public:
     /**
      * @brief Update function (Called for each frame of video)
      * 
      * @param i 
      */
-    virtual void update(const vpImage<T> &I) = 0;
+    virtual vpHomogeneousMatrix update(const vpImage<T> &I) = 0;
 
     virtual ~Slam() {}
 
