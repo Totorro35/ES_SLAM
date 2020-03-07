@@ -16,8 +16,13 @@
 #include <visp/vpVideoReader.h>
 
 #include <Slam/Homography.hpp>
+#include <Slam/AprilTag.hpp>
+#include <Slam/Pokemon.hpp>
+#include <visp/vpRGBa.h>
 
 #include <memory>
+
+#include <visp/vpVideoWriter.h>
 
 typedef unsigned char ImgType;
 
@@ -40,9 +45,8 @@ int main(int argc, char **argv)
             }
         }
 
-        
-
         vpImage<ImgType> I;
+        vpImage<vpRGBa> Ioverlay;
         vpVideoReader g;
         g.setFileName(videoname);
         g.open(I);
@@ -50,9 +54,15 @@ int main(int argc, char **argv)
         std::cout << "video framerate: " << g.getFramerate() << "Hz" << std::endl;
         std::cout << "video dimension: " << I.getWidth() << " " << I.getHeight() << std::endl;
 
-        vpCameraParameters cam(200, 200, I.getWidth() / 2, I.getHeight() / 2);
+        vpCameraParameters cam(1512, 1512, I.getWidth() / 2, I.getHeight() / 2);
 
-        std::shared_ptr<Slam::Slam<ImgType>> slam(new Slam::Homography<ImgType>(I,cam));
+        //std::shared_ptr<Slam::Slam<ImgType>> slam(new Slam::Homography<ImgType>(I,cam));
+        //std::shared_ptr<Slam::Slam<ImgType>> slam(new Slam::AprilTag<ImgType>(I,cam));
+        std::shared_ptr<Slam::Slam<ImgType>> slam(new Slam::Pokemon<ImgType>(I,cam));
+
+        vpVideoWriter writer;
+        writer.setFileName("./test.avi");
+        writer.open(I);
 
 #ifdef VISP_HAVE_X11
         vpDisplayX d(I);
@@ -74,14 +84,19 @@ int main(int argc, char **argv)
             g.acquire(I);
             vpHomogeneousMatrix cTw = slam->update(I);
             vpDisplay::display(I);
-            vpDisplay::displayFrame(I,cTw*wTo,cam,5,vpColor(0,0,255));
+            vpDisplay::displayFrame(I, cTw, cam, 0.05, vpColor::none, 3);
             vpDisplay::flush(I);
+            vpDisplay::getImage(I,Ioverlay);
+            writer.saveFrame(Ioverlay);
             if (vpDisplay::getClick(I, false))
                 break;
             vpTime::wait(t, 1000. / g.getFramerate());
+            //vpDisplay::getClick(I);
         }
 
         slam->saveJson("../data/out.txt");
+        slam->saveJson2("../data/out2.txt");
+        writer.close();
     }
     catch (vpException e)
     {

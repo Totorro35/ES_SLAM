@@ -13,6 +13,8 @@
 #include <visp/vpImage.h>
 #include <Loader/Tools.hpp>
 #include <visp/vpPoseVector.h>
+#include <visp/vpTranslationVector.h>
+#include <visp/vpQuaternionVector.h>
 
 namespace Slam
 {
@@ -70,6 +72,30 @@ public:
                 file+="\n";
             }
 
+            cpt++;
+        }
+
+        Loader::saveFile(filename, file);
+    }
+
+    /**
+     * @brief Save all poses
+     * 
+     * @return std::string 
+     */
+    virtual void saveJson2(std::string filename) const
+    {
+        std::string file = "";
+        int cpt = 0;
+        for (auto var : m_poses)
+        {
+            file += "#" + std::to_string(cpt) + "\n";
+            vpQuaternionVector q;
+            vpTranslationVector t;
+            var.extract(q);
+            var.extract(t);
+            file+=std::to_string(t[0])+" "+std::to_string(t[1])+" "+std::to_string(t[2])+"\n";
+            file+=std::to_string(q.x())+" "+std::to_string(q.y())+" "+std::to_string(q.z())+" "+std::to_string(q.w())+"\n";
             cpt++;
         }
 
